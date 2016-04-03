@@ -5,12 +5,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/falun/markup/assets"
 )
+
+const browseToken = "browse"
 
 type markupServer struct {
 	root  string
@@ -29,8 +32,16 @@ func (m markupServer) ResolvePath(p string) string {
 
 type markupRequest struct{ *http.Request }
 
+func (r markupRequest) Browse() bool {
+	return strings.HasPrefix(r.URL.Path, "/"+browseToken+"/")
+}
+
 func (r markupRequest) IsRoot() bool {
-	return "" == r.FilePath()
+	uri := r.URL.Path
+	return uri == "/"+browseToken ||
+		uri == "/"+browseToken+"/" ||
+		uri == "" ||
+		uri == "/"
 }
 
 func (r markupRequest) IsHTML() bool {
@@ -47,9 +58,8 @@ func (r markupRequest) IsMarkdown() bool {
 func (r markupRequest) FilePath() string {
 	p := r.URL.Path
 
-	if p[0] == '/' {
-		p = p[1:]
-	}
+	cutlen := 2 + len(browseToken)
+	p = p[cutlen:]
 
 	return p
 }
@@ -58,7 +68,7 @@ func (srv markupServer) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) 
 	r := markupRequest{netReq}
 
 	if r.IsRoot() {
-		http.Redirect(rw, netReq, srv.index, http.StatusSeeOther)
+		http.Redirect(rw, netReq, "/"+browseToken+"/"+srv.index, http.StatusSeeOther)
 		return
 	}
 
@@ -99,11 +109,35 @@ func (srv markupServer) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) 
 	rw.Write(output)
 }
 
+type findFile struct {
+	root string
+}
+
+func (ff findFile) Resolve(p string) bool {
+	ue, err := url.QueryUnescape(p)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fp := path.Join(ff.root, ue)
+	fptr, err := os.Open(fp)
+	defer fptr.Close()
+
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+		log.Fatal(err)
+	}
+
+	return true
+}
+
 func Main(cfg Config) {
 	http.Handle("/", markupServer{
 		root:     cfg.RootDir,
 		index:    cfg.Index,
-		renderer: NewRenderer(),
+		renderer: NewRenderer(findFile{cfg.RootDir}),
 	})
 
 	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)

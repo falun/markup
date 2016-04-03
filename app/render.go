@@ -6,17 +6,23 @@ import (
 	"github.com/russross/blackfriday"
 )
 
+type FileResolver interface {
+	Resolve(string) bool
+}
+
 type MarkupRenderer struct {
 	blackfriday.Renderer
 	extensions int
+	res        FileResolver
 }
 
 var _ blackfriday.Renderer = MarkupRenderer{}
 
-func NewRenderer() MarkupRenderer {
+func NewRenderer(rslv FileResolver) MarkupRenderer {
 	return MarkupRenderer{
 		Renderer:   blackfriday.HtmlRenderer(blackfridayHTMLFlags, "", ""),
 		extensions: blackfridayExtensions,
+		res:        rslv,
 	}
 }
 
