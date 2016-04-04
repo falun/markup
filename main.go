@@ -17,7 +17,7 @@ func main() {
 
 	port := 8080
 	host := "localhost"
-	index := ""
+	index := "README.md"
 
 	flag.StringVar(&pwd, "serve.root", pwd, "the root serving directory")
 	flag.StringVar(&host, "serve.ip", host, "the interface we should be listening on")

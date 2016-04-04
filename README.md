@@ -24,7 +24,7 @@ There isn't much in the way of config options:
     $ markup -h
     Usage of markup:
       -serve.index string
-          the file returned if '/' is requested; resolved relative to server.root
+          the file returned if '/' is requested; resolved relative to server.root (default README.md)
       -serve.ip string
           the interface we should be listening on (default "localhost")
       -serve.port int
