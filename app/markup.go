@@ -38,10 +38,12 @@ func (r markupRequest) Browse() bool {
 
 func (r markupRequest) IsRoot() bool {
 	uri := r.URL.Path
-	return uri == "/"+browseToken ||
-		uri == "/"+browseToken+"/" ||
+
+	return false ||
 		uri == "" ||
-		uri == "/"
+		uri == "/" ||
+		uri == "/"+browseToken ||
+		uri == "/"+browseToken+"/"
 }
 
 func (r markupRequest) IsHTML() bool {
