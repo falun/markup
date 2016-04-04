@@ -8,7 +8,7 @@ At my company markdown is lingua franca for anything that isn't code. Our eng
 docs, company handbook, interview guides, etc are all markdown. This is great
 for editing but a bit of a pain to actually read.
 
-`morkup` is just a simple server that renders markdown.
+`markup` is just a simple server that renders markdown.
 
 ## Installing markup
 
@@ -38,10 +38,10 @@ docs that need to descend below root will not resolve correctly.
 Typical usage for me looks lomething like `markup -serve.index README.md` which
 will end up dropped into `handbook.sh`, `engdocs.sh`, and the like.
 
-## Features!
-
-There really aren't any yet.
-
 ## Caching!
 
-Nope, every time you hit a page it reads it from memory and renders it anew.
+Every time you hit a page it reads it from memory and renders it anew.
+
+## Other Features!
+
+Nope.
