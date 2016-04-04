@@ -40,7 +40,7 @@ will end up dropped into `handbook.sh`, `engdocs.sh`, and the like.
 
 ## Caching!
 
-Every time you hit a page it reads it from memory and renders it anew.
+Every time you hit a page it reads it from disk  and renders it anew.
 
 ## Other Features!
 
