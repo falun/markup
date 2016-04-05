@@ -5,4 +5,5 @@ type Config struct {
 	Port    int
 	RootDir string
 	Index   string
+	Token   string
 }

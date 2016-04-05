@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -15,79 +14,82 @@ import (
 
 const browseToken = "browse"
 
-type markupServer struct {
+type browserHandler struct {
 	root  string
 	index string
+	token string
 
 	renderer MarkupRenderer
 }
 
-func (m markupServer) ResolvePath(p string) string {
-	if p == "" {
-		p = m.index
-	}
-
+func (m browserHandler) ResolvePath(p string) string {
 	return path.Join(m.root, p)
 }
 
-type markupRequest struct{ *http.Request }
-
-func (r markupRequest) Browse() bool {
-	return strings.HasPrefix(r.URL.Path, "/"+browseToken+"/")
+type browseRequest struct {
+	*http.Request
+	token string
 }
 
-func (r markupRequest) IsRoot() bool {
-	uri := r.URL.Path
+func (r browseRequest) EndsWith(ext ...string) bool {
+	path := strings.ToLower(r.URL.Path)
 
-	return false ||
-		uri == "" ||
-		uri == "/" ||
-		uri == "/"+browseToken ||
-		uri == "/"+browseToken+"/"
+	for _, e := range ext {
+		if strings.HasSuffix(path, strings.ToLower(e)) {
+			return true
+		}
+	}
+
+	return false
 }
 
-func (r markupRequest) IsHTML() bool {
-	path := r.URL.Path
-	return strings.HasSuffix(strings.ToLower(path), ".html") ||
-		strings.HasSuffix(strings.ToLower(path), ".htm")
+func (r browseRequest) IsHTML() bool {
+	return r.EndsWith(".html", ".htm")
 }
 
-func (r markupRequest) IsMarkdown() bool {
-	path := r.URL.Path
-	return strings.HasSuffix(strings.ToLower(path), ".md")
+func (r browseRequest) IsMarkdown() bool {
+	return r.EndsWith(".md")
 }
 
-func (r markupRequest) FilePath() string {
+func (r browseRequest) FilePath() string {
 	p := r.URL.Path
 
-	cutlen := 2 + len(browseToken)
+	cutlen := 2 + len(r.token)
 	p = p[cutlen:]
 
 	return p
 }
 
-func (srv markupServer) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) {
-	r := markupRequest{netReq}
+func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) {
+	r := browseRequest{netReq, srv.token}
 
-	if r.IsRoot() {
-		http.Redirect(rw, netReq, "/"+browseToken+"/"+srv.index, http.StatusSeeOther)
+	// check for '/browse/' and serve index if requested
+	reqPath := r.FilePath()
+	if reqPath == "" {
+		serveIndex("/"+srv.token+"/", srv.token, srv.index)(rw, netReq)
 		return
 	}
 
-	filepath := srv.ResolvePath(r.FilePath())
+	// find the file being requested
+	filepath := srv.ResolvePath(reqPath)
 	fptr, err := os.Open(filepath)
 	defer fptr.Close()
 
 	if err != nil {
-		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintf(rw, "%s", err)
+		if os.IsNotExist(err) {
+			// not found if the file doesn't exist
+			serveNotFound(rw, netReq)
+		} else {
+			// 503 on other errors
+			serveError(rw, netReq, err)
+		}
 		return
 	}
 
+	// read contents of the file; return 500 on error
 	b, err := ioutil.ReadAll(fptr)
 	if err != nil {
-		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintf(rw, "%s", err)
+		serveError(rw, netReq, err)
 		return
 	}
 
@@ -96,6 +98,7 @@ func (srv markupServer) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) 
 	output := b
 	ct := "text/plain"
 
+	// compute content type, render markdown, if applicable
 	switch {
 	case r.IsMarkdown():
 		title := path.Base(filepath)
@@ -106,40 +109,19 @@ func (srv markupServer) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) 
 		ct = "text/html"
 	}
 
+	// set the mime type and write the results
 	h["Content-Type"] = []string{ct}
 	rw.WriteHeader(http.StatusOK)
 	rw.Write(output)
 }
 
-type findFile struct {
-	root string
-}
-
-func (ff findFile) Resolve(p string) bool {
-	ue, err := url.QueryUnescape(p)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fp := path.Join(ff.root, ue)
-	fptr, err := os.Open(fp)
-	defer fptr.Close()
-
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-		log.Fatal(err)
-	}
-
-	return true
-}
-
 func Main(cfg Config) {
-	http.Handle("/", markupServer{
+	http.Handle("/", serveIndex("/", cfg.Token, cfg.Index))
+	http.Handle(fmt.Sprintf("/%s/", cfg.Token), browserHandler{
 		root:     cfg.RootDir,
 		index:    cfg.Index,
-		renderer: NewRenderer(findFile{cfg.RootDir}),
+		token:    cfg.Token,
+		renderer: NewRenderer(),
 	})
 
 	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)

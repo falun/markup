@@ -33,6 +33,7 @@ func main() {
 		Host:    host,
 		Port:    port,
 		Index:   index,
+		Token:   "browse",
 	}
 
 	app.Main(cfg)
