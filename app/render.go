@@ -1,8 +1,6 @@
 package app
 
 import (
-	"bytes"
-
 	"github.com/russross/blackfriday"
 )
 
