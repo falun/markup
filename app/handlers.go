@@ -3,9 +3,12 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"sort"
+
+	"github.com/falun/markup/buildindex"
 )
 
-func serveIndex(prefix, browseToken, index string) http.HandlerFunc {
+func serveRoot(prefix, browseToken, index string) http.HandlerFunc {
 	rootPage := fmt.Sprintf("/%s/%s", browseToken, index)
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == prefix {
@@ -13,6 +16,46 @@ func serveIndex(prefix, browseToken, index string) http.HandlerFunc {
 		} else {
 			serveNotFound(rw, r)
 		}
+	}
+}
+
+func serveIndex(token, root string) http.HandlerFunc {
+	l := len(root)
+	fileset, _ := buildindex.OfDir(root, 0, buildindex.MatchExt(".md"))
+	sort.Sort(buildindex.ByFilepath(fileset))
+
+	frame := `<html>
+	<body>
+		<ul>
+			%s
+		</ul>
+	</body>
+	</html>`
+
+	mkEntry := func(fe buildindex.FileEntry) string {
+		if fe.Dir {
+			return ""
+		}
+
+		relRoot := fe.Root[l:]
+		return fmt.Sprintf(
+			"<li>%s/<a href=\"%s\">%s</a></li>\n",
+			relRoot,
+			fmt.Sprintf("../%s/%s/%s", token, relRoot, fe.Name),
+			fe.Name,
+		)
+	}
+
+	contents := ""
+	for _, e := range fileset {
+		contents += mkEntry(e)
+	}
+
+	body := fmt.Sprintf(frame, contents)
+
+	return func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(body))
 	}
 }
 
