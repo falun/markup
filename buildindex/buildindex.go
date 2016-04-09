@@ -4,35 +4,20 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
-type FileEntry struct {
-	Root string
-	Name string
-	Dir  bool
+// Config allows tweaking of how directory walk behaves.
+type Config struct {
+	MaxDepth       int  // How deep should we go before giving up; -1 indicates no limit
+	FollowSymlinks bool // when we hit a symlinked directory should we walk down it?
 }
 
-type ByFilepath []FileEntry
-
-func (f ByFilepath) Len() int {
-	return len(f)
-}
-
-func (f ByFilepath) Less(i, j int) bool {
-	if f[i].Root > f[j].Root {
-		return false
-	}
-
-	if (f[i].Root == f[j].Root) && (f[i].Name >= f[j].Name) {
-		return false
-	}
-
-	return true
-}
-
-func (f ByFilepath) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
+// OfDir builds a list files whose names match some function. All paths will be
+// returned relative to 'dir'.
+func OfDir(dir string, cfg Config, matchfn func(string) bool) []FileEntry {
+	return ofDir(dir, 0, cfg, matchfn)
 }
 
 func MatchAll(name string) bool {
@@ -50,49 +35,40 @@ func MatchExt(ext ...string) func(string) bool {
 	}
 }
 
-// OfDir builds a list files whose names match some function. All paths will be
-// returned relative to 'dir'.
-//
-// TODO: allow configuration for do/do-not follow symlinks
-func OfDir(dir string, depth int, matchfn func(string) bool) ([]FileEntry, error) {
-	return ofDir(dir, 0, depth, matchfn)
-}
-
-// TODO: ugh. filepath.Walk is what I wanted; more reasons that coding on the
-// train is a pita. Anyway, replace with that eventually.
 func ofDir(
 	dir string,
-	curDepth, maxDepth int,
+	curDepth int,
+	cfg Config,
 	matchfn func(string) bool,
-) ([]FileEntry, error) {
-	if maxDepth != 0 && curDepth > maxDepth {
-		return []FileEntry{}, nil
+) []FileEntry {
+	if cfg.MaxDepth != -1 && curDepth > cfg.MaxDepth {
+		return []FileEntry{}
 	}
 
 	fptr, err := os.Open(dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "err opening %s: %s\n", dir, err)
 		fptr.Close()
-		return []FileEntry{}, nil
+		return []FileEntry{}
 	}
 
 	fstat, err := fptr.Stat()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not stat %s: %s\n", dir, err)
 		fptr.Close()
-		return []FileEntry{}, nil
+		return []FileEntry{}
 	}
 
 	if !fstat.IsDir() {
 		fmt.Fprintf(os.Stderr, "Could not index file as directory: %s\n", dir)
 		fptr.Close()
-		return []FileEntry{}, nil
+		return []FileEntry{}
 	}
 
 	fileinfos, err := fptr.Readdir(0)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Hit error indexding %s: %s\n", dir, err)
-		return []FileEntry{}, nil
+		return []FileEntry{}
 	}
 
 	// we're done with this dir now
@@ -101,8 +77,28 @@ func ofDir(
 	foundfiles := []FileEntry{}
 	for _, fi := range fileinfos {
 		fipath := path.Join(dir, fi.Name())
+		if fi.Mode()&os.ModeSymlink != 0 {
+			original := fipath
+			fipath, err := filepath.EvalSymlinks(fipath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not resolve symlink %s: %s\n", original, err)
+				continue
+			}
+
+			fi, err = os.Stat(fipath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not stat %s, resolved from symlink %s: %s\n", fipath, original, err)
+				continue
+			}
+
+			if !cfg.FollowSymlinks && fi.IsDir() {
+				fmt.Fprintf(os.Stderr, "Not following symlink %s\n", fipath)
+				continue
+			}
+		}
+
 		if fi.IsDir() {
-			dirfiles, _ := ofDir(fipath, curDepth+1, maxDepth, matchfn)
+			dirfiles := ofDir(fipath, curDepth+1, cfg, matchfn)
 			if len(dirfiles) != 0 {
 				foundfiles = append(foundfiles, dirfiles...)
 			}
@@ -119,5 +115,5 @@ func ofDir(
 		foundfiles = append([]FileEntry{dentry}, foundfiles...)
 	}
 
-	return foundfiles, nil
+	return foundfiles
 }
