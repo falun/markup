@@ -44,4 +44,7 @@ Every time you hit a page it reads it from disk  and renders it anew.
 
 ## Other Features!
 
-Nope.
+`/index` will serve a list of all markdown files found by descending from
+`serve.root`. This file list is built once at startup, follows symlinks,
+doesn't enforce any kind of max depth, and blocks serving until the walk
+finishes (so there are some improvements that can be made).
