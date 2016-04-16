@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"sort"
 
 	"github.com/falun/markup/buildindex"
@@ -20,7 +21,9 @@ func serveRoot(prefix, browseToken, index string) http.HandlerFunc {
 }
 
 func serveIndex(token, root string) http.HandlerFunc {
+	root = path.Clean(root)
 	l := len(root)
+
 	cfg := buildindex.Config{MaxDepth: -1, FollowSymlinks: true}
 	fileset := buildindex.OfDir(root, cfg, buildindex.MatchExt(".md"))
 	sort.Sort(buildindex.ByFilepath(fileset))
