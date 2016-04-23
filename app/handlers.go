@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path"
 	"sort"
+	"strings"
 
 	"github.com/falun/markup/buildindex"
 )
@@ -20,15 +21,7 @@ func serveRoot(prefix, browseToken, index string) http.HandlerFunc {
 	}
 }
 
-func serveIndex(token, root string) http.HandlerFunc {
-	root = path.Clean(root)
-	l := len(root)
-
-	cfg := buildindex.Config{MaxDepth: -1, FollowSymlinks: true}
-	fileset := buildindex.OfDir(root, cfg, buildindex.MatchExt(".md"))
-	sort.Sort(buildindex.ByFilepath(fileset))
-
-	frame := `<html>
+const frame = `<html>
 	<body>
 		<ul>
 			%s
@@ -36,16 +29,33 @@ func serveIndex(token, root string) http.HandlerFunc {
 	</body>
 	</html>`
 
+func serveIndex(indexToken, browseToken, root string) http.HandlerFunc {
+	root = path.Clean(root)
+	rootLen := len(root)
+
+	cfg := buildindex.Config{MaxDepth: -1, FollowSymlinks: true}
+	fileset := buildindex.OfDir(root, cfg, buildindex.MatchExt(".md"))
+	sort.Sort(buildindex.ByFilepath(fileset))
+
 	mkEntry := func(fe buildindex.FileEntry) string {
+		relRoot := fe.Root[rootLen:]
+
 		if fe.Dir {
-			return ""
+			if relRoot == "" {
+				return ""
+			}
+			return fmt.Sprintf(
+				`<li><a href="/%s%s">%s</a>`,
+				indexToken,
+				relRoot,
+				relRoot,
+			)
 		}
 
-		relRoot := fe.Root[l:]
 		return fmt.Sprintf(
 			"<li>%s/<a href=\"%s\">%s</a></li>\n",
 			relRoot,
-			fmt.Sprintf("../%s/%s/%s", token, relRoot, fe.Name),
+			fmt.Sprintf("/%s%s/%s", browseToken, relRoot, fe.Name),
 			fe.Name,
 		)
 	}
@@ -58,8 +68,27 @@ func serveIndex(token, root string) http.HandlerFunc {
 	body := fmt.Sprintf(frame, contents)
 
 	return func(rw http.ResponseWriter, r *http.Request) {
-		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(body))
+		// searching is the directory we're looking for; "." if empty
+		searching := path.Clean(r.URL.Path[len(indexToken)+2:])
+
+		if searching != "." {
+			contents := ""
+			for _, c := range fileset {
+				if strings.HasSuffix(c.Root, searching) {
+					contents += mkEntry(c)
+				}
+			}
+
+			if contents == "" {
+				http.Redirect(rw, r, fmt.Sprintf("/%s/", indexToken), http.StatusSeeOther)
+				return
+			}
+			rw.WriteHeader(http.StatusOK)
+			rw.Write([]byte(fmt.Sprintf(frame, contents)))
+		} else {
+			rw.WriteHeader(http.StatusOK)
+			rw.Write([]byte(body))
+		}
 	}
 }
 

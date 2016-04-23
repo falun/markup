@@ -29,11 +29,12 @@ func main() {
 	flag.Parse()
 
 	cfg := app.Config{
-		RootDir: pwd,
-		Host:    host,
-		Port:    port,
-		Index:   index,
-		Token:   "browse",
+		RootDir:     pwd,
+		Host:        host,
+		Port:        port,
+		Index:       index,
+		BrowseToken: "browse",
+		IndexToken:  "index",
 	}
 
 	app.Main(cfg)
