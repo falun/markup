@@ -1,14 +1,14 @@
 # markup
 
-`markdown` is a collection of tools that convert specially formatted text into
-HTML. It's designed to be easy to read when it's viewed in its plantext form
-and not only when rendered.
+`markdown` is a style of formatting plain text and a collection of tools that
+convert this format into HTML. It's designed to be easy to write and readable
+in its plantext form.
 
 At my company markdown is lingua franca for anything that isn't code. Our eng
 docs, company handbook, interview guides, etc are all markdown. This is great
-for editing but a bit of a pain to actually read.
+for editing but a bit of a pain to actually read in a rendered form.
 
-`markup` is just a simple server that renders markdown.
+`markup` is just a simple server that renders markdown on the fly.
 
 ## Installing markup
 
