@@ -657,4 +657,8 @@ const Css = `@font-face {
   z-index: 1;
   position: relative;
   border-color: #4078c0;
+}
+
+.banner {
+	margin-bottom: 0.5em;
 }`

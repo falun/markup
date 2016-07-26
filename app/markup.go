@@ -7,16 +7,20 @@ import (
 )
 
 func Main(cfg Config) {
+	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+
 	http.Handle("/", serveRoot("/", cfg.Token, cfg.Index))
 	http.Handle(fmt.Sprintf("/%s/", cfg.Token), browserHandler{
+		host:     ingress,
 		root:     cfg.RootDir,
 		index:    cfg.Index,
 		token:    cfg.Token,
 		renderer: NewRenderer(),
 	})
-	http.Handle("/index/", serveIndex(cfg.Token, cfg.RootDir))
+	http.Handle(
+		"/index/",
+		serveIndex(cfg.Token, cfg.RootDir, cfg.ExcludeDirs))
 
-	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	fmt.Printf(`
 Listening on: %s
 Serving from: %s

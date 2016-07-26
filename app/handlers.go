@@ -19,9 +19,13 @@ func serveRoot(prefix, browseToken, index string) http.HandlerFunc {
 	}
 }
 
-func serveIndex(token, root string) http.HandlerFunc {
+func serveIndex(token, root string, excluding []string) http.HandlerFunc {
 	l := len(root)
-	cfg := buildindex.Config{MaxDepth: -1, FollowSymlinks: true}
+	cfg := buildindex.Config{
+		MaxDepth:       -1,
+		FollowSymlinks: true,
+		Exclude:        excluding}
+
 	fileset := buildindex.OfDir(root, cfg, buildindex.MatchExt(".md"))
 	sort.Sort(buildindex.ByFilepath(fileset))
 

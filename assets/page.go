@@ -12,17 +12,21 @@ const pageTemplate = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 </style>
 <style>body{box-sizing:border-box;min-width:200px;max-width:980px;margin:0 auto;padding:45px;}</style>
 </head>
-<body class="markdown-body">
+<body>
+<div class="banner"><a href="http://%s/index/">Index</a></div>
+<div class="markdown-body">
 %s
+</div>
 </body>
 </html>`
 
 // GetPageHTML renders a given bit of markdown text as HTML.
 //
+//   hosted: The host:port combination where markup is running
 //   markdown: the markdown to be rendered
 //   titlep: If set this is the title of the page; otherwise the empty string is used
 //   cssp: If set this is used as the CSS for this page; otherwise assets.Css is used
-func GetPageHTML(markdown []byte, titlep, cssp *string) []byte {
+func GetPageHTML(hosted string, markdown []byte, titlep, cssp *string) []byte {
 	title := ""
 	css := Css
 
@@ -34,5 +38,5 @@ func GetPageHTML(markdown []byte, titlep, cssp *string) []byte {
 		title = *titlep
 	}
 
-	return []byte(fmt.Sprintf(pageTemplate, title, css, markdown))
+	return []byte(fmt.Sprintf(pageTemplate, title, css, hosted, markdown))
 }

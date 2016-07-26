@@ -10,13 +10,22 @@ import (
 
 // Config allows tweaking of how directory walk behaves.
 type Config struct {
-	MaxDepth       int  // How deep should we go before giving up; -1 indicates no limit
-	FollowSymlinks bool // when we hit a symlinked directory should we walk down it?
+	MaxDepth       int      // How deep should we go before giving up; -1 indicates no limit
+	FollowSymlinks bool     // when we hit a symlinked directory should we walk down it?
+	Exclude        []string // which directories should be ignored when building the index
+}
+
+func prepareExcludedDirs(cfg Config, base string) {
+	for i, ed := range cfg.Exclude {
+		cfg.Exclude[i] = filepath.Clean(filepath.Join(base, ed))
+	}
 }
 
 // OfDir builds a list files whose names match some function. All paths will be
 // returned relative to 'dir'.
 func OfDir(dir string, cfg Config, matchfn func(string) bool) []FileEntry {
+	fmt.Printf("Indexing %s\n", dir)
+	prepareExcludedDirs(cfg, dir)
 	return ofDir(dir, 0, cfg, matchfn)
 }
 
@@ -98,6 +107,15 @@ func ofDir(
 		}
 
 		if fi.IsDir() {
+			skipDir := false
+			for _, ed := range cfg.Exclude {
+				if ed == fipath {
+					skipDir = true
+				}
+			}
+
+			if skipDir { continue }
+
 			dirfiles := ofDir(fipath, curDepth+1, cfg, matchfn)
 			if len(dirfiles) != 0 {
 				foundfiles = append(foundfiles, dirfiles...)

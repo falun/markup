@@ -11,6 +11,7 @@ import (
 )
 
 type browserHandler struct {
+	host  string
 	root  string
 	index string
 	token string
@@ -100,7 +101,7 @@ func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request
 		title := path.Base(filepath)
 		ct = "text/html"
 		md := srv.renderer.Render(b)
-		output = assets.GetPageHTML(md, &title, nil)
+		output = assets.GetPageHTML(srv.host, md, &title, nil)
 	case r.IsHTML():
 		ct = "text/html"
 	}
