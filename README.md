@@ -25,7 +25,7 @@ There isn't much in the way of config options:
 		Usage of markup:
 		  -index.exclude string
 		        these directories (comma separated) will not be included in the
-            generated /index. They are resolved relative to index.root
+		        generated /index. They are resolved relative to index.root
 		  -index.root string
 		        the root serving directory (default current directory)
 		  -serve.home string
