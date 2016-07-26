@@ -29,7 +29,8 @@ func main() {
 		"the file returned if '/' is requested; resolved relative to server.root")
 	flag.StringVar(
 		&exclude, "index.exclude", exclude,
-		"these directories (comma separated) will not be included in the generated /index")
+		"these directories (comma separated) will not be included in the generated " +
+		"/index. They are resolved relative to index.root")
 
 	flag.Parse()
 
@@ -43,7 +44,8 @@ func main() {
 		Host:        host,
 		Port:        port,
 		Index:       index,
-		Token:       "browse",
+		BrowseToken: "browse",
+		IndexToken:  "index",
 		ExcludeDirs: excludeDirs,
 	}
 

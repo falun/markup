@@ -5,6 +5,7 @@ type Config struct {
 	Port        int
 	RootDir     string
 	Index       string
-	Token       string
+	BrowseToken string
+	IndexToken  string
 	ExcludeDirs []string
 }

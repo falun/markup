@@ -9,17 +9,17 @@ import (
 func Main(cfg Config) {
 	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 
-	http.Handle("/", serveRoot("/", cfg.Token, cfg.Index))
-	http.Handle(fmt.Sprintf("/%s/", cfg.Token), browserHandler{
+	http.Handle("/", serveRoot("/", cfg.BrowseToken, cfg.Index))
+	http.Handle(fmt.Sprintf("/%s/", cfg.BrowseToken), browserHandler{
 		host:     ingress,
 		root:     cfg.RootDir,
 		index:    cfg.Index,
-		token:    cfg.Token,
+		token:    cfg.BrowseToken,
 		renderer: NewRenderer(),
 	})
-	http.Handle(
-		"/index/",
-		serveIndex(cfg.Token, cfg.RootDir, cfg.ExcludeDirs))
+
+	http.Handle(fmt.Sprintf("/%s/", cfg.IndexToken),
+		serveIndex(cfg.IndexToken, cfg.BrowseToken, cfg.RootDir, cfg.ExcludeDirs))
 
 	fmt.Printf(`
 Listening on: %s
