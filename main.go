@@ -25,7 +25,7 @@ func main() {
 	flag.StringVar(&host, "serve.ip", host, "the interface we should be listening on")
 	flag.IntVar(&port, "serve.port", port, "the port markup will listen on")
 	flag.StringVar(
-		&index, "serve.home", index,
+		&index, "serve.default", index,
 		"the file returned if '/' is requested; resolved relative to server.root")
 	flag.StringVar(
 		&exclude, "index.exclude", exclude,

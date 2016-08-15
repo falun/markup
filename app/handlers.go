@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"path"
 	"sort"
-	"strings"
 
 	"github.com/falun/markup/buildindex"
 )
@@ -72,12 +71,12 @@ func serveIndex(indexToken, browseToken, root string, excluding []string) http.H
 
 	return func(rw http.ResponseWriter, r *http.Request) {
 		// searching is the directory we're looking for; "." if empty
-		searching := path.Clean(r.URL.Path[len(indexToken)+2:])
+		searching := path.Clean(r.URL.Path[len(indexToken)+1:])
 
-		if searching != "." {
+		if !(searching == "." || searching == "/") {
 			contents := ""
 			for _, c := range fileset {
-				if strings.HasSuffix(c.Root, searching) {
+				if c.Root[len(root):] == searching {
 					contents += mkEntry(c)
 				}
 			}

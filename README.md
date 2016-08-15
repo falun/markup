@@ -28,8 +28,8 @@ There isn't much in the way of config options:
 		        generated /index. They are resolved relative to index.root
 		  -index.root string
 		        the root serving directory (default current directory)
-		  -serve.home string
-		        the file returned if '/' is requested; resolved relative to server.root (default "README.md")
+		  -serve.default string
+		        the file returned if '/' is requested; resolved relative to index.root (default "README.md")
 		  -serve.ip string
 		        the interface we should be listening on (default "localhost")
 		  -serve.port int
@@ -38,7 +38,7 @@ There isn't much in the way of config options:
 All requests are resolved relative to `-index.root`. Relative links in your
 docs that need to descend below root will not resolve correctly.
 
-Typical usage for me looks lomething like `markup -serve.index README.md` which
+Typical usage for me looks lomething like `markup -serve.default SOMEFILE.md` which
 will end up dropped into `handbook.sh`, `engdocs.sh`, and the like.
 
 ## Caching!
