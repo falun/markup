@@ -21,15 +21,23 @@ func main() {
 	index := "README.md"
 	exclude := ""
 
-	flag.StringVar(&pwd, "index.root", pwd, "the root serving directory")
-	flag.StringVar(&host, "serve.ip", host, "the interface we should be listening on")
-	flag.IntVar(&port, "serve.port", port, "the port markup will listen on")
+	flag.StringVar(&pwd, "index.root", pwd, "[DEPRECATED] the root serving directory")
+	flag.StringVar(&host, "serve.ip", host, "[DEPRECATED] the interface we should be listening on")
+	flag.IntVar(&port, "serve.port", port, "[DEPRECATED] the port markup will listen on")
 	flag.StringVar(
 		&index, "serve.default", index,
-		"the file returned if '/' is requested; resolved relative to server.root")
+		"[DEPRECATED] the file returned if '/' is requested; resolved relative to server.root")
+
+	flag.StringVar(&pwd, "root", pwd, "the root serving directory")
+	flag.StringVar(&host, "ip", host, "the interface we should be listening on")
+	flag.IntVar(&port, "port", port, "the port markup will listen on")
+	flag.StringVar(
+		&index, "default-file", index,
+		"the file returned if '/' is requested; resolved relative to root")
+
 	flag.StringVar(
 		&exclude, "index.exclude", exclude,
-		"these directories (comma separated) will not be included in the generated " +
+		"[UNUSED] these directories (comma separated) will not be included in the generated " +
 		"/index. They are resolved relative to index.root")
 
 	flag.Parse()

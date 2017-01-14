@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -11,10 +12,11 @@ import (
 )
 
 type browserHandler struct {
-	host  string
-	root  string
-	index string
-	token string
+	host       string
+	root       string
+	index      string
+	token      string
+	indexToken string
 
 	renderer MarkupRenderer
 }
@@ -55,6 +57,11 @@ func (r browseRequest) FilePath() string {
 	p = p[cutlen:]
 
 	return p
+}
+
+func (r browseRequest) ParentDir() string {
+	fp := r.FilePath()
+	return path.Dir(fp)
 }
 
 func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) {
@@ -101,7 +108,8 @@ func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request
 		title := path.Base(filepath)
 		ct = "text/html"
 		md := srv.renderer.Render(b)
-		output = assets.GetPageHTML(srv.host, md, &title, nil)
+		p := path.Clean(fmt.Sprintf("%s/%s", srv.indexToken, r.ParentDir()))
+		output = assets.GetPageHTML(srv.host, p, md, &title, nil)
 	case r.IsHTML():
 		ct = "text/html"
 	}

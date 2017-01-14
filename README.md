@@ -22,23 +22,35 @@ go install github.com/falun/markup
 There isn't much in the way of config options:
 
     $ markup -h
-		Usage of markup:
-		  -index.exclude string
-		        these directories (comma separated) will not be included in the
-		        generated /index. They are resolved relative to index.root
-		  -index.root string
-		        the root serving directory (default current directory)
-		  -serve.default string
-		        the file returned if '/' is requested; resolved relative to index.root (default "README.md")
-		  -serve.ip string
-		        the interface we should be listening on (default "localhost")
-		  -serve.port int
-		        the port markup will listen on (default 8080)
+    Usage of markup:
+      -default-file string
+            the file returned if '/' is requested; resolved relative to root (default "README.md")
+      -ip string
+            the interface we should be listening on (default "localhost")
+      -port int
+            the port markup will listen on (default 8080)
+      -root string
+            the root serving directory (default is the current directory)
 
-All requests are resolved relative to `-index.root`. Relative links in your
+In the most recent push sever flags were changed. The following flags are
+_deprecated_ but still function:
+
+old flag      | equivalent new flag
+--------------|--------------------
+index.root    | root
+serve.default | default-file
+serve.ip      | ip
+serve.port    | port
+
+Additionally the flag `index.exclude` no longer functions due to changing the
+way the `/index` endpoint works and will be removed in the future. It is retained
+for now for backwards compatibility with scripts that have been written to
+start `markup`.
+
+All requests are resolved relative to `root`. Relative links in your
 docs that need to descend below root will not resolve correctly.
 
-Typical usage for me looks lomething like `markup -serve.default SOMEFILE.md` which
+Typical usage for me looks lomething like `markup -default SOMEFILE.md` which
 will end up dropped into `handbook.sh`, `engdocs.sh`, and the like.
 
 ## Caching!
@@ -47,7 +59,5 @@ Every time you hit a page it reads it from disk  and renders it anew.
 
 ## Other Features!
 
-`/index` will serve a list of all markdown files found by descending from
-`serve.root`. This file list is built once at startup, follows symlinks,
-doesn't enforce any kind of max depth, and blocks serving until the walk
-finishes (so there are some improvements that can be made).
+`/index` serves a directory listing starting at `-root`. Each markdown file
+will be rendered with a link to its parent directory.
