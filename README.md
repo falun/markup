@@ -35,7 +35,7 @@ The full set of config flags cmay be found by `markup -h`.
 
 As indicated above markup config is found by checking in `config-dir` + `config-file`
 but may be explicitly specified (overriding both `config-X` options) by passing the
-file on the command line: 'markup ./custom-config.json`.
+file on the command line: `markup ./custom-config.json`.
 
 ## Caching!
 
