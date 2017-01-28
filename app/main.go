@@ -15,7 +15,7 @@ func Main(cfg Config) {
 	http.Handle("/", serveRoot("/", cfg.BrowseToken, cfg.Index))
 
 	http.Handle(fmt.Sprintf("/%s/", cfg.BrowseToken), browserHandler{
-		Renderer: renderer,
+		Renderer:   renderer,
 		host:       ingress,
 		root:       cfg.RootDir,
 		index:      cfg.Index,

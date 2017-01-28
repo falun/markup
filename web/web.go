@@ -2,10 +2,10 @@ package web
 
 import (
 	"bytes"
-	"os"
-	"log"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"path"
 	"text/template"
 

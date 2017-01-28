@@ -1,8 +1,8 @@
 package web
 
 import (
-	"path"
 	"mime"
+	"path"
 )
 
 type MimeTypeProvider interface {
