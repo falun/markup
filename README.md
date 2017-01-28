@@ -19,8 +19,12 @@ go install github.com/falun/markup
 
 ## Running markup
 
-There is a small but moving set of configuration opts options for `markup`. The
-core set necessary to meaningfully use it are:
+The most common case is to run markup from the root directory of a project that
+you want to read docs in. The generated config will be stored in
+`./markup/conf.json` and then used for subsequent executions.
+
+To customize behavior there is a small but moving set of configuration options.
+The core set of flags are:
 
 | Flag         | Meaning | Default |
 | ------------ | ------- | ------- |
@@ -31,17 +35,25 @@ core set necessary to meaningfully use it are:
 | root         | the directory that will be used as a starting point to locate all requested files | `<pwd>` |
 | dc           | prints out the configuration that will be used if markup is run with the provided flags | |
 
-The full set of config flags cmay be found by `markup -h`.
+A full set of config flags cmay be found by `markup -h`.
 
-As indicated above markup config is found by checking in `config-dir` + `config-file`
+As suggested in the table markup's config is found by checking in `<config-dir>/<config-file>`
 but may be explicitly specified (overriding both `config-X` options) by passing the
 file on the command line: `markup ./custom-config.json`.
 
-## Caching!
+## Caching?
 
-Every time you hit a page it reads it from disk  and renders it anew.
+None!
+
+Every time you hit a page it reads it from disk and renders it anew.
+
+Every time you view a page it looks for a template on disk and parses it if found.
 
 ## Other Features!
 
 `/index` serves a directory listing starting at `-root`. Each markdown file
 will be rendered with a link to its parent directory.
+
+`/asset` will load a file from the asset dir without applying any transformations.
+This may be used for supplemental resources (see `assets/browse.tmpl`'s use of
+`/asset/style.css`).
