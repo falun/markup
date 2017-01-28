@@ -8,17 +8,17 @@ import (
 	"path"
 	"strings"
 
-	"github.com/falun/markup/assets"
+	"github.com/falun/markup/web"
 )
 
 type browserHandler struct {
+	web.Renderer
+
 	host       string
 	root       string
 	index      string
 	token      string
 	indexToken string
-
-	renderer MarkupRenderer
 }
 
 func (m browserHandler) ResolvePath(p string) string {
@@ -67,7 +67,7 @@ func (r browseRequest) ParentDir() string {
 func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request) {
 	r := browseRequest{netReq, srv.token}
 
-	// check for '/browse/' and serve index if requested
+	// check for '/$browseToken/' and serve index if requested
 	reqPath := r.FilePath()
 	if reqPath == "" {
 		serveRoot("/"+srv.token+"/", srv.token, srv.index)(rw, netReq)
@@ -91,7 +91,7 @@ func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request
 	}
 
 	// read contents of the file; return 500 on error
-	b, err := ioutil.ReadAll(fptr)
+	fileBytes, err := ioutil.ReadAll(fptr)
 	if err != nil {
 		serveError(rw, netReq, err)
 		return
@@ -99,19 +99,29 @@ func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request
 
 	h := rw.Header()
 
-	output := b
 	ct := "text/plain"
+	if r.IsMarkdown() || r.IsHTML() {
+		ct = "text/html"
+	}
 
-	// compute content type, render markdown, if applicable
-	switch {
-	case r.IsMarkdown():
+	output := fileBytes
+	if ct == "text/html" {
 		title := path.Base(filepath)
-		ct = "text/html"
-		md := srv.renderer.Render(b)
-		p := path.Clean(fmt.Sprintf("%s/%s", srv.indexToken, r.ParentDir()))
-		output = assets.GetPageHTML(srv.host, p, md, &title, nil)
-	case r.IsHTML():
-		ct = "text/html"
+		parentDir := path.Clean(fmt.Sprintf("%s/%s", srv.indexToken, r.ParentDir()))
+		view := web.MarkdownView{
+			Title:      title,
+			Style:      web.CssString,
+			Host:       srv.host,
+			IndexPath:  parentDir,
+			FileString: string(fileBytes),
+			IsMarkdown: r.IsMarkdown(),
+			IsHTML:     r.IsHTML(),
+		}
+
+		output, err = srv.Render(web.MarkdownTmpl, view)
+	}
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
 	// set the mime type and write the results

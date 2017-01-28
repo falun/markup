@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"sort"
-	"strings"
 
-	"github.com/falun/markup/assets"
+	"github.com/falun/markup/web"
 )
 
 type indexHandler struct {
+	web.Renderer
+
 	indexToken  string
 	browseToken string
 	rootDir     string
@@ -34,18 +34,17 @@ func (h indexHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dir := Dir{urlPath, nil}
-	addChild := func(name string, isDir bool) {
-		dir.Children = append(dir.Children, child{name, isDir})
-	}
+	view := web.NewIndexView(urlPath, h.indexToken, h.browseToken)
 
 	for _, i := range infos {
 		// construct the file path of a given child
 		ifp := path.Join(fp, i.Name())
 		isDir := i.IsDir()
+
 		// if it's a symlink we can't trust the supplied info's isDir
 		symlink := 0 != int(i.Mode()&os.ModeSymlink)
 		if symlink {
+			// TODO: should readlink instead of relying on path.Join?
 			info, err := os.Stat(ifp)
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -55,50 +54,15 @@ func (h indexHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			isDir = info.IsDir()
 		}
 
-		addChild(i.Name(), isDir)
+		view.AddChild(i.Name(), isDir)
 	}
 
-	sort.Sort(dir)
+	view.Sort()
 
-	output, err := assets.RenderIndexPage(dir)
+	output, err := h.Render(web.IndexTmpl, view)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
 	rw.Write([]byte(output))
-}
-
-type Dir struct {
-	Root     string
-	Children []child
-}
-
-type child struct {
-	Name string
-	Dir  bool
-}
-
-var _ sort.Interface = Dir{}
-
-func (c Dir) Len() int { return len(c.Children) }
-
-func (c Dir) Swap(i, j int) {
-	c.Children[i], c.Children[j] = c.Children[j], c.Children[i]
-}
-
-func (c Dir) Less(i, j int) bool {
-	id := c.Children[i].Dir
-	jd := c.Children[j].Dir
-
-	if id != jd {
-		// if they're not both dirs or !dirs then list then order the directory
-		// first
-		return id
-	}
-
-	// assuming both have the same dir status order by lowercased alpha
-	in := strings.ToLower(c.Children[i].Name)
-	jn := strings.ToLower(c.Children[j].Name)
-
-	return in < jn
 }

@@ -1,0 +1,25 @@
+{{$index := .IndexToken -}}
+{{$browse := .BrowseToken -}}
+<html>
+	<head>
+		<title>Index Listing {{.Root}}</title>
+	</head>
+
+	<body>
+		{{ with $dir := . }}
+			<h2>Index: {{$dir.Root}}</h2>
+			<ul>
+				{{ if ne $dir.Root "/" }}<li><a href="/{{$index}}/{{$dir.Root}}..">../</a></li>{{end}}
+				{{ range $child := $dir.Children }}
+					<li>
+						{{ if $child.IsDir }}
+							<a href="/{{$index}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}/</a>
+						{{ else }}
+							<a href="/{{$browse}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}</a>
+						{{ end }}
+					</li>
+				{{ end }}
+			{{ end }}
+		</hl>
+	</body>
+</html>

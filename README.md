@@ -19,39 +19,23 @@ go install github.com/falun/markup
 
 ## Running markup
 
-There isn't much in the way of config options:
+There is a small but moving set of configuration opts options for `markup`. The
+core set necessary to meaningfully use it are:
 
-    $ markup -h
-    Usage of markup:
-      -default-file string
-            the file returned if '/' is requested; resolved relative to root (default "README.md")
-      -ip string
-            the interface we should be listening on (default "localhost")
-      -port int
-            the port markup will listen on (default 8080)
-      -root string
-            the root serving directory (default is the current directory)
+| Flag         | Meaning | Default |
+| ------------ | ------- | ------- |
+| config-dir   | directory housing the config file | `<pwd>/.markup` |
+| config-file  | name of the file housing config; may be overwritten by passing a file as argument 1 | `<config-dir>/conf.json` |
+| default-file | the file that will be rendered initially when accessing `/` | README.md |
+| port         | what port should the server listen on for requests | 8080 |
+| root         | the directory that will be used as a starting point to locate all requested files | `<pwd>` |
+| dc           | prints out the configuration that will be used if markup is run with the provided flags | |
 
-In the most recent push sever flags were changed. The following flags are
-_deprecated_ but still function:
+The full set of config flags cmay be found by `markup -h`.
 
-old flag      | equivalent new flag
---------------|--------------------
-index.root    | root
-serve.default | default-file
-serve.ip      | ip
-serve.port    | port
-
-Additionally the flag `index.exclude` no longer functions due to changing the
-way the `/index` endpoint works and will be removed in the future. It is retained
-for now for backwards compatibility with scripts that have been written to
-start `markup`.
-
-All requests are resolved relative to `root`. Relative links in your
-docs that need to descend below root will not resolve correctly.
-
-Typical usage for me looks lomething like `markup -default SOMEFILE.md` which
-will end up dropped into `handbook.sh`, `engdocs.sh`, and the like.
+As indicated above markup config is found by checking in `config-dir` + `config-file`
+but may be explicitly specified (overriding both `config-X` options) by passing the
+file on the command line: 'markup ./custom-config.json`.
 
 ## Caching!
 
