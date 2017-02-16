@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
+	"time"
 
 	"github.com/falun/markup/app"
 )
@@ -17,11 +19,13 @@ func main() {
 		port                = 8080
 		host                = "localhost"
 		index               = "README.md"
+		excludeDirs         = ""
 		noUseExistingConfig = false
 		noWriteConfig       = false
 		configDir           = path.Join(rootDir, ".markup")
 		assetDir            = path.Join(configDir, "assets")
 		configFile          = "conf.json"
+		scanFreq            = 0 * time.Second
 		dumpConfig          = false
 	)
 
@@ -51,6 +55,12 @@ func main() {
 	flag.StringVar(
 		&assetDir, "asset-dir", assetDir,
 		"If set markup will attempt to load templates and other app assets from this directory.")
+	flag.DurationVar(
+		&scanFreq, "scan-freq", scanFreq,
+		"If > 0s this will control how long markup waits between each indexing pass over root directory")
+	flag.StringVar(
+		&excludeDirs, "exclude-dirs", "",
+		"Comma-separated set of directories that will be excluded when building an index")
 
 	flag.Parse()
 
@@ -98,6 +108,13 @@ func main() {
 	if useDefault || flagSet["asset-dir"] {
 		flagged.AssetDir = assetDir
 	}
+	if useDefault || flagSet["scan-freq"] {
+		flagged.RootScanFreq = &scanFreq
+	}
+	if useDefault || flagSet["exclude-dirs"] {
+		flagged.ExcludeDirs = strings.Split(excludeDirs, ",")
+	}
+
 	cfg.Merge(flagged)
 
 	if !dumpConfig && !noWriteConfig {
@@ -112,6 +129,7 @@ func main() {
 		fmt.Printf("%s\n", cfg.JSON())
 		return
 	}
+
 	app.Main(*cfg)
 }
 

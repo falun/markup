@@ -57,3 +57,38 @@ will be rendered with a link to its parent directory.
 `/asset` will load a file from the asset dir without applying any transformations.
 This may be used for supplemental resources (see `assets/browse.tmpl`'s use of
 `/asset/style.css`).
+
+`/i/search` can be used to find files based on file name matching. It has the
+following query parameters:
+
+| Parameter        | Meaning |
+| ---------------- | ------- |
+| `term`           | The file being searched for. Spaces are replaced with a wildcard, regexp may be used. |
+| `ft`             | A comma-separated list of file extenstions. Leading `.` is not required and case is ignored. |
+| `case-sensitive` | If passed `term` is matched in a case sensitive manner. |
+| `include-dir`    | If passed the full path (vs file name only) will be searched for a match to `term`. |
+
+Example:
+
+```shell
+$ curl -s 'localhost:8080/i/search?term=(browse|readme)&ft=md,go'
+{
+  "search_term": "(browse|readme)",
+  "file_types": [
+    ".md",
+    ".go"
+  ],
+  "last_scan_ms": 1487234369950,
+  "match": [
+    "app\\browse.go",
+    "README.md",
+    "vendor\\github.com\\russross\\blackfriday\\README.md",
+    "vendor\\github.com\\shurcooL\\sanitized_anchor_name\\README.md",
+    "web\\browse.go"
+  ]
+}
+```
+
+Directories may be excluded from this search by specifying `exclude-dirs` at
+startup and the frequency with which the index will be rebuilt is controled by
+`scan-freq`. For more information see `markup -h`.

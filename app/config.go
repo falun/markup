@@ -6,18 +6,20 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Config struct {
-	Host        string   `json:"host"`
-	Port        int      `json:"port"`
-	RootDir     string   `json:"root_dir"`
-	AssetDir    string   `json:"asset_dir"`
-	Index       string   `json:"index_file"`
-	BrowseToken string   `json:"browse_token"`
-	IndexToken  string   `json:"index_token"`
-	AssetToken  string   `json:"asset_token"`
-	ExcludeDirs []string `json:"exclude_dirs"`
+	Host         string         `json:"host"`
+	Port         int            `json:"port"`
+	RootDir      string         `json:"root_dir"`
+	AssetDir     string         `json:"asset_dir"`
+	Index        string         `json:"index_file"`
+	BrowseToken  string         `json:"browse_token"`
+	IndexToken   string         `json:"index_token"`
+	AssetToken   string         `json:"asset_token"`
+	ExcludeDirs  []string       `json:"exclude_dirs"`
+	RootScanFreq *time.Duration `json:"scan_freq"`
 }
 
 // Merge will use the Config as a set of defaults and
@@ -60,6 +62,10 @@ func (c *Config) Merge(other Config) *Config {
 
 	if len(other.ExcludeDirs) != 0 {
 		c.ExcludeDirs = other.ExcludeDirs
+	}
+
+	if other.RootScanFreq != nil {
+		c.RootScanFreq = other.RootScanFreq
 	}
 
 	return c
