@@ -26,7 +26,10 @@ const IndexTmplString = `{{$index := .IndexToken -}}
   </body>
 </html>`
 
-const MarkdownTmplString = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+const MarkdownTmplString = `{{ if .IsHTML -}}
+{{ .FileString }}
+{{- else -}}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
@@ -58,7 +61,8 @@ const MarkdownTmplString = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transit
       {{ end -}} 
     </div>
   </body>
-</html>`
+</html>
+{{- end }}`
 
 // github css; filler, replace with something I ilke better
 const CssString = `@font-face {
