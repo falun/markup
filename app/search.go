@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"net/url"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -16,11 +15,11 @@ import (
 const (
 	// FlagTerm is the query param that may be set to specifi what is being
 	// searched for; if no term is present all files will be matched.
-	FlagTerm          = "term"
+	FlagTerm = "term"
 
 	// FlagFileType can be specified to match only a certain file type; it may
 	// be passed multiple times or have multiple values comma-separated.
-	FlagFileType      = "ft"
+	FlagFileType = "ft"
 
 	// FlagCaseSensitive is a query parameter that can be passed to make search
 	// case sensitive
@@ -28,25 +27,22 @@ const (
 
 	// FlagRegexp is a query parameter that can be passed which forces evaluation
 	// of the search term as a regexp instead of substring match.
-	FlagRegexp        = "regexp"
+	FlagRegexp = "regexp"
 
 	// FlagIncludeDir, when set, expands the search term match to include the
 	// containing path as well as just the file name.
-	FlagIncludeDir    = "include-dir"
+	FlagIncludeDir = "include-dir"
 )
 
 // SearchResults is the payload that will be sent back in the case of a
 // successful search request.
 type SearchResults struct {
-	SearchTerm string   `json:"search_term"`
-	FileTypes  []string `json:"file_types"`
-	TimeStamp  int      `json:"last_scan_ms"`
-	Matches    []string `json:"match"`
+	SearchTerm  string   `json:"search_term"`
+	FileTypes   []string `json:"file_types"`
+	TimeStamp   int      `json:"last_scan_ms"`
+	Matches     []string `json:"match"`
+	ResultCount int      `json:"count"`
 }
-
-// Args are extracted from the query parameters of a request and allow access
-// to relevant parameters through convenience methods.
-type Args map[string][]string
 
 type searchHandlerS struct {
 	rootDir string
@@ -61,14 +57,17 @@ func searchHandler(root string) searchHandlerS {
 var whitespaceRE = regexp.MustCompile("\\s+")
 
 func (sh searchHandlerS) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	args, err := getArgs(r)
 	result := api.Results{}
 
+	ta, err := api.NewArgs(r)
 	if err != nil {
 		result.Err = err
 		result.RenderTo(rw)
 		return
 	}
+
+	args := Args(ta)
+	pg := api.NewPagination(api.Args(args))
 
 	t := args.Term()
 	t = string(whitespaceRE.ReplaceAll([]byte(t), []byte(".*")))
@@ -92,6 +91,7 @@ func (sh searchHandlerS) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		fta,
 		int(ts.UnixNano() / int64(time.Millisecond)),
 		nil,
+		0,
 	}
 
 	for _, f := range fs {
@@ -120,10 +120,27 @@ func (sh searchHandlerS) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			sr.Matches = append(sr.Matches, p)
 		}
 	}
-	result.Results = sr
 
+	sr.ResultCount = len(sr.Matches)
+
+	offset := 0
+	if pg.PageSize > 0 {
+		offset = pg.PageNumber * pg.PageSize
+		if offset >= len(sr.Matches) {
+			sr.Matches = sr.Matches[0:0]
+		} else {
+			sr.Matches = sr.Matches[offset:]
+			if len(sr.Matches) > pg.PageSize {
+				sr.Matches = sr.Matches[:pg.PageSize]
+			}
+		}
+	}
+
+	result.Results = sr
 	result.RenderTo(rw)
 }
+
+type Args api.Args
 
 func (a Args) CaseSensitive() bool {
 	_, ok := a[FlagCaseSensitive]
@@ -160,6 +177,9 @@ func (a Args) FileTypes() ([]string, map[string]bool, bool) {
 	for _, ft := range fts {
 		fta := strings.Split(ft, ",")
 		for _, fte := range fta {
+			if fte == "" {
+				continue
+			}
 			t := strings.ToLower(fte)
 			if t[0] != '.' {
 				t = "." + t
@@ -168,40 +188,6 @@ func (a Args) FileTypes() ([]string, map[string]bool, bool) {
 			ra = append(ra, t)
 		}
 	}
-	return ra, rm, true
-}
 
-func getArgs(r *http.Request) (Args, error) {
-	args := Args{}
-
-	q := r.URL.RawQuery
-	parts := strings.Split(q, "&")
-
-	for _, p := range parts {
-		k := ""
-		v := ""
-		var err error
-
-		kv := strings.SplitN(p, "=", 2)
-		if len(kv) == 0 {
-			continue
-		}
-
-		if len(kv) > 0 {
-			k, err = url.QueryUnescape(kv[0])
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if len(kv) > 1 {
-			v, err = url.QueryUnescape(kv[1])
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		args[k] = append(args[k], v)
-	}
-	return args, nil
+	return ra, rm, len(ra) > 0
 }

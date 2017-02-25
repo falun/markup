@@ -1,0 +1,6 @@
+.search-icon {
+  background-image: url('/asset/vendor/glyphicons-28-search.png');
+  padding-right: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+}

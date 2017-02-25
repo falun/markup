@@ -1,0 +1,18 @@
+{
+  "root": "./assets",
+  "files": [
+    {"path": "mime.json", "compress": true},
+    {"path": "api.js", "compress": true},
+    {"path": "browse.tmpl", "compress": true},
+    {"path": "index.tmpl", "compress": true},
+    {"path": "index-nav.js", "compress": true},
+    {"path": "markup.css", "compress": true},
+    {"path": "search.css", "compress": true},
+    {"path": "search.js", "compress": true},
+    {"path": "style.css", "compress": true},
+    {"path": "vendor/bootstrap.min.css", "compress": true},
+    {"path": "vendor/bootstrap.min.js", "compress": true},
+    {"path": "vendor/jquery.min.js", "compress": true},
+    {"path": "vendor/glyphicons-28-search.png"}
+  ]
+}

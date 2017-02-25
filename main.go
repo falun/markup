@@ -1,15 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/falun/markup/app"
+	"github.com/falun/markup/bundle"
 )
 
 func main() {
@@ -22,11 +25,12 @@ func main() {
 		excludeDirs         = ""
 		noUseExistingConfig = false
 		noWriteConfig       = false
-		configDir           = path.Join(rootDir, ".markup")
-		assetDir            = path.Join(configDir, "assets")
+		configDir           = filepath.Join(rootDir, ".markup")
+		assetDir            = filepath.Join(configDir, "assets")
 		configFile          = "conf.json"
 		scanFreq            = 0 * time.Second
 		dumpConfig          = false
+		forceInstallAssets  = false
 	)
 
 	// config around how to run markup
@@ -61,6 +65,9 @@ func main() {
 	flag.StringVar(
 		&excludeDirs, "exclude-dirs", "",
 		"Comma-separated set of directories that will be excluded when building an index")
+	flag.BoolVar(
+		&forceInstallAssets, "force-install-assets", false,
+		"Installs default assets into the asset directory. Will overwrite existing content if the directory in not empty.")
 
 	flag.Parse()
 
@@ -121,16 +128,59 @@ func main() {
 		cfg.SaveToFile(configFilePath)
 	}
 
+	shouldInstallAssets := !exists(cfg.AssetDir)
+
+	installAssets := shouldInstallAssets || forceInstallAssets
 	if dumpConfig {
 		if noUseExistingConfig {
 			configFilePath = ""
 		}
-		fmt.Printf("Would use config (%s):", configFilePath)
+		if installAssets {
+			fmt.Printf("Wolud install assets to %v\n", cfg.AssetDir)
+		}
+		fmt.Printf("Would use mime map: %v\n", filepath.Join(cfg.AssetDir, "mime.json"))
+		fmt.Printf("Would use config (%s): ", configFilePath)
 		fmt.Printf("%s\n", cfg.JSON())
 		return
 	}
 
-	app.Main(*cfg)
+	if installAssets {
+		bundle.Install(cfg.AssetDir)
+	}
+
+	app.Main(*cfg, getMimeMap(cfg.AssetDir))
+}
+
+func getMimeMap(cfgDir string) map[string]string {
+	p := filepath.Join(cfgDir, "mime.json")
+	b, err := ioutil.ReadFile(p)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		log.Fatalf("Error attempting to read MIME config (%v): %v\n", p, err.Error())
+	}
+
+	// config stores mime -> [extenion]
+	config := map[string][]string{}
+	err = json.Unmarshal(b, &config)
+	if err != nil {
+		log.Fatalf("Error parsing MIME config (%v): %v", p, err.Error())
+	}
+
+	// returns in format extension -> MIME type
+	result := map[string]string{}
+	for mt, exts := range config {
+		for _, e := range exts {
+			// ensure extension also includes the period
+			if e[0] != '.' {
+				e = "." + e
+			}
+			result[e] = mt
+		}
+	}
+
+	return result
 }
 
 func mustGetPwd() string {
@@ -141,41 +191,63 @@ func mustGetPwd() string {
 	return dir
 }
 
-func mustIsDirOrDirSymlink(path string) bool {
+func exists(path string) bool {
+	fp, err := os.Open(path)
+	defer fp.Close()
+	if os.IsNotExist(err) {
+		return false
+	}
+	if err != nil {
+		log.Fatalf("failed check for existence of %v: %v", path, err.Error())
+	}
+
+	return true
+}
+
+func isDirOrDirSymlink(path string) (bool, error) {
 	fp, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("could not open %v: %v", path, err)
+		return false, fmt.Errorf("could not open %v: %v", path, err)
 	}
 
 	i, err := fp.Stat()
 	if err != nil {
-		log.Fatalf("could not Stat %v: %v", path, err)
+		return false, fmt.Errorf("could not Stat %v: %v", path, err)
 	}
 
 	if i.IsDir() {
-		return true
+		return true, nil
 	}
 
 	if 0 == (os.ModeSymlink & i.Mode()) {
-		return false
+		return false, nil
 	}
 
 	newPath, err := os.Readlink(path)
 	if err != nil {
-		log.Fatalf("could not resolve symlink %v: %v", path, err)
+		return false, fmt.Errorf("could not resolve symlink %v: %v", path, err)
 	}
 
 	fp, err = os.Open(newPath)
 	if err != nil {
-		log.Fatalf("could not open resolved symlink %v: %v", newPath, err)
+		return false, fmt.Errorf("could not open resolved symlink %v: %v", newPath, err)
 	}
 
 	i, err = fp.Stat()
 	if err != nil {
-		log.Fatalf("could not Stat resolved symlink %v: %v", newPath, err)
+		return false, fmt.Errorf("could not Stat resolved symlink %v: %v", newPath, err)
 	}
 
-	return i.IsDir()
+	return i.IsDir(), nil
+}
+
+func mustIsDirOrDirSymlink(path string) bool {
+	isDir, err := isDirOrDirSymlink(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return isDir
 }
 
 func getConfigPath(args []string, configDir, configFile string) string {
@@ -187,7 +259,7 @@ func getConfigPath(args []string, configDir, configFile string) string {
 		log.Fatalf("configDir '%v' must be a directory")
 	}
 
-	return path.Join(configDir, configFile)
+	return filepath.Join(configDir, configFile)
 }
 
 func ensureConfigDir(d string) error {

@@ -1,26 +1,58 @@
 {{ if .IsHTML -}}
 {{ .FileString  }}
 {{- else -}}
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <title>{{ .Title }}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link type="text/css" rel="stylesheet" href="/asset/style.css">
+    <link type="text/css" rel="stylesheet" href="/asset/style.css"/>
+    <link type="text/css" rel="stylesheet" href="/asset/markup.css"/>
+    <link type="text/css" rel="stylesheet" href="/asset/search.css"/>
+
+    <link type="text/css" rel="stylesheet" href="/asset/vendor/bootstrap.min.css"/>
+    <script src="/asset/vendor/jquery.min.js"></script>
+    <script src="/asset/vendor/bootstrap.min.js"></script>
+    <script src="/asset/api.js"></script>
+    <script src="/asset/search.js"></script>
   </head>
 
   <body>
-    <div class="banner"><a href="/{{ .IndexPath }}">Index</a></div>
-    <div class="markdown-body">
-      {{ if .IsMarkdown -}}
+    <nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <span class="navbar-brand">
+            {{.Title}}
+          </span>
+        </div>
+        <ul class="nav navbar-nav">
+          <li><a href="/{{.IndexPath}}">View Directory</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <button
+                type="button"
+                class="btn navbar-btn"
+                onclick="$('#search-modal').modal('show');">
+              <span class="search-icon">&nbsp;</span>
+              Search
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="markdown-body">
         {{ markdown .FileString }}
-      {{ else -}}
-        {{ if not .IsHTML }}<pre>{{ end -}}
-          {{- .FileString -}}
-        {{ if not .IsHTML }}</pre>{{ end -}}
-      {{ end -}} 
+      </div>
+
+      <search/>
     </div>
+
+  <script>
+      installSearch($('search')[0], '{{.BrowseToken}}');
+  </script>
   </body>
 </html>
 {{- end }}

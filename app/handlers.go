@@ -36,13 +36,13 @@ func serveIndex(
 	}.ServeHTTP
 }
 
-func serveAsset(token, root string) http.HandlerFunc {
+func serveAsset(token, root string, mimeMap map[string]string) http.HandlerFunc {
 	i := 2 + len(token)
 	asset := func(r *http.Request) string {
 		return r.URL.Path[i:]
 	}
 
-	mime := web.NewMimeTypeProvider(root)
+	mime := web.NewMimeTypeProvider(root, mimeMap)
 
 	return func(rw http.ResponseWriter, r *http.Request) {
 		file := asset(r)

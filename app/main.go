@@ -9,7 +9,7 @@ import (
 	"github.com/falun/markup/web"
 )
 
-func Main(cfg Config) {
+func Main(cfg Config, mimeMap map[string]string) {
 	ingress := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	renderer := web.NewRenderer(cfg.AssetDir)
 
@@ -38,7 +38,7 @@ func Main(cfg Config) {
 	// static assets
 	if cfg.AssetToken != "" && cfg.AssetDir != "" {
 		http.Handle(fmt.Sprintf("/%s/", cfg.AssetToken),
-			serveAsset(cfg.AssetToken, cfg.AssetDir))
+			serveAsset(cfg.AssetToken, cfg.AssetDir, mimeMap))
 	}
 
 	// start root dir scanner, if necessary

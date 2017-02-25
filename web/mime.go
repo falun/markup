@@ -2,7 +2,7 @@ package web
 
 import (
 	"mime"
-	"path"
+	"path/filepath"
 )
 
 type MimeTypeProvider interface {
@@ -10,13 +10,22 @@ type MimeTypeProvider interface {
 }
 
 type provider struct {
-	assetDir string
+	assetDir     string
+	extensionMap map[string]string
 }
 
-func NewMimeTypeProvider(assetDir string) MimeTypeProvider {
-	return provider{assetDir}
+func NewMimeTypeProvider(assetDir string, extMap map[string]string) MimeTypeProvider {
+	if extMap == nil {
+		extMap = map[string]string{}
+	}
+	return provider{assetDir, extMap}
 }
 
 func (p provider) ForFile(fp string) string {
-	return mime.TypeByExtension(path.Ext(fp))
+	ext := filepath.Ext(fp)
+	if mt, ok := p.extensionMap[ext]; ok {
+		return mt
+	}
+
+	return mime.TypeByExtension(ext)
 }

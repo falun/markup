@@ -26,14 +26,15 @@ you want to read docs in. The generated config will be stored in
 To customize behavior there is a small but moving set of configuration options.
 The core set of flags are:
 
-| Flag         | Meaning | Default |
-| ------------ | ------- | ------- |
-| config-dir   | directory housing the config file | `<pwd>/.markup` |
-| config-file  | name of the file housing config; may be overwritten by passing a file as argument 1 | `<config-dir>/conf.json` |
-| default-file | the file that will be rendered initially when accessing `/` | README.md |
-| port         | what port should the server listen on for requests | 8080 |
-| root         | the directory that will be used as a starting point to locate all requested files | `<pwd>` |
-| dc           | prints out the configuration that will be used if markup is run with the provided flags | |
+| Flag                 | Meaning | Default |
+| -------------------- | ------- | ------- |
+| config-dir           | directory housing the config file | `<pwd>/.markup` |
+| config-file          | name of the file housing config; may be overwritten by passing a file as argument 1 | `<config-dir>/conf.json` |
+| default-file         | the file that will be rendered initially when accessing `/` | README.md |
+| port                 | what port should the server listen on for requests | 8080 |
+| root                 | the directory that will be used as a starting point to locate all requested files | `<pwd>` |
+| dc                   | prints out the configuration that will be used if markup is run with the provided flags | |
+| force-install-assets | will overwrite the contents of `<asset-dir>` with the default set of web pages | false |
 
 A full set of config flags cmay be found by `markup -h`.
 
@@ -67,6 +68,7 @@ following query parameters:
 | `ft`             | A comma-separated list of file extenstions. Leading `.` is not required and case is ignored. |
 | `case-sensitive` | If passed `term` is matched in a case sensitive manner. |
 | `include-dir`    | If passed the full path (vs file name only) will be searched for a match to `term`. |
+| `page`           | Indicates which page of results to return; 0-indexed. |
 
 Example:
 
@@ -85,7 +87,8 @@ $ curl -s 'localhost:8080/i/search?term=(browse|readme)&ft=md,go'
     "vendor\\github.com\\russross\\blackfriday\\README.md",
     "vendor\\github.com\\shurcooL\\sanitized_anchor_name\\README.md",
     "web\\browse.go"
-  ]
+  ],
+  "count": 5
 }
 ```
 

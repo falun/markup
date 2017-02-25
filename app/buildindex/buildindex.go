@@ -3,7 +3,6 @@ package buildindex
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -97,7 +96,7 @@ func ofDir(
 
 	foundfiles := FileSet{}
 	for _, fi := range fileinfos {
-		fipath := path.Join(curDir, fi.Name())
+		fipath := filepath.Join(curDir, fi.Name())
 		if fi.Mode()&os.ModeSymlink != 0 {
 			original := fipath
 			fipath, err := filepath.EvalSymlinks(fipath)

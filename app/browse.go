@@ -109,13 +109,14 @@ func (srv browserHandler) ServeHTTP(rw http.ResponseWriter, netReq *http.Request
 		title := path.Base(filepath)
 		parentDir := path.Clean(fmt.Sprintf("%s/%s", srv.indexToken, r.ParentDir()))
 		view := web.MarkdownView{
-			Title:      title,
-			Style:      web.CssString,
-			Host:       srv.host,
-			IndexPath:  parentDir,
-			FileString: string(fileBytes),
-			IsMarkdown: r.IsMarkdown(),
-			IsHTML:     r.IsHTML(),
+			Title:       title,
+			Style:       web.CssString,
+			Host:        srv.host,
+			IndexPath:   parentDir,
+			FileString:  string(fileBytes),
+			BrowseToken: srv.token,
+			IsMarkdown:  r.IsMarkdown(),
+			IsHTML:      r.IsHTML(),
 		}
 
 		output, err = srv.Render(web.MarkdownTmpl, view)

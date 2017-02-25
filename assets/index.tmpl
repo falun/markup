@@ -1,25 +1,91 @@
 {{$index := .IndexToken -}}
 {{$browse := .BrowseToken -}}
+<!DOCTYPE html>
 <html>
-	<head>
-		<title>Index Listing {{.Root}}</title>
-	</head>
+  <head>
+    <title>Index Listing {{.Root}}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-	<body>
-		{{ with $dir := . }}
-			<h2>Index: {{$dir.Root}}</h2>
-			<ul>
-				{{ if ne $dir.Root "/" }}<li><a href="/{{$index}}/{{$dir.Root}}..">../</a></li>{{end}}
-				{{ range $child := $dir.Children }}
-					<li>
-						{{ if $child.IsDir }}
-							<a href="/{{$index}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}/</a>
-						{{ else }}
-							<a href="/{{$browse}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}</a>
-						{{ end }}
-					</li>
-				{{ end }}
-			{{ end }}
-		</hl>
-	</body>
+    <link type="text/css" rel="stylesheet" href="/asset/markup.css"/>
+    <link type="text/css" rel="stylesheet" href="/asset/search.css"/>
+
+    <link type="text/css" rel="stylesheet" href="/asset/vendor/bootstrap.min.css"/>
+    <script src="/asset/vendor/jquery.min.js"></script>
+    <script src="/asset/vendor/bootstrap.min.js"></script>
+    <script src="/asset/api.js"></script>
+    <script src="/asset/search.js"></script>
+    <style>
+      .child {
+        padding-left: 0.5em;
+      }
+
+      .active:before {
+        content: ">";
+      }
+
+      .ul-children {
+        list-style: none;
+        padding-left: 1em;
+      }
+
+      .ul-children>.active:before {
+        position:relative;
+        content: ">";
+        margin-left: -.9em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <span class="navbar-brand">
+            Directory Index: {{.Root}}
+          </span>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <button
+                type="button"
+                class="btn navbar-btn"
+                onclick="$('#search-modal').modal('show');">
+                <!--data-toggle="modal" data-target="#search-modal"-->
+              <span class="search-icon">&nbsp;</span>
+              Search
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+    {{ with $dir := . }}
+      <ul class="ul-children">
+        {{ $first := true }}
+        <table id="index-listing">
+          {{ if ne $dir.Root "/" }}<tr><td></td><td class="child"><a href="/{{$index}}/{{$dir.Root}}..">../</a></td></tr>{{end}}
+        {{ range $idx, $child := $dir.Children -}}
+          <tr>
+            <td {{if false}}class="active"{{end}}></td>
+            <td class="child">
+            {{ if $child.IsDir }}
+              <a href="/{{$index}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}/</a>
+            {{ else }}
+              <a href="/{{$browse}}/{{$dir.Root}}{{$child.Name}}">{{ $child.Name }}</a>
+            {{ end }}
+            </td>
+          </tr>
+        {{ end }}
+        </table>
+      </ul>
+    {{ end }}
+
+    <search/>
+    </div>
+
+    <script>
+      installSearch($('search')[0], '{{$browse}}');
+    </script>
+  </body>
 </html>
